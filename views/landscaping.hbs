@@ -1,0 +1,192 @@
+<style>
+  /* Landscaping page — grey, black & white theme */
+  :root {
+    --primary: hsl(0, 0%, 30%);
+    --primary-dark: hsl(0, 0%, 15%);
+    --primary-light: hsl(0, 0%, 50%);
+    --primary-glow: hsl(0, 0%, 70%);
+    --primary-subtle: hsl(0, 0%, 95%);
+    --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.35);
+    --shadow-glow: 0 0 60px rgba(0, 0, 0, 0.25);
+  }
+
+  body {
+    background: linear-gradient(180deg, #ffffff 0%, #f0f0f0 100%);
+  }
+
+  .hero {
+    background: linear-gradient(135deg, hsl(0, 0%, 15%) 0%, hsl(0, 0%, 35%) 100%);
+  }
+
+  .hero-title {
+    color: #ffffff;
+  }
+
+  .hero-subtitle {
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  .btn-primary {
+    background: #ffffff;
+    color: #111111;
+  }
+
+  .btn-primary:hover {
+    background: #e0e0e0;
+  }
+
+  .btn-secondary {
+    background: hsl(0, 0%, 20%);
+    color: #ffffff;
+  }
+
+  .btn-secondary:hover {
+    background: hsl(0, 0%, 10%);
+  }
+
+  .title-underline {
+    background: linear-gradient(90deg, hsl(0, 0%, 30%), hsl(0, 0%, 60%));
+  }
+
+  a {
+    color: hsl(0, 0%, 30%);
+  }
+
+  a:hover {
+    color: hsl(0, 0%, 10%);
+  }
+</style>
+
+<!-- Hero Header -->
+<header class="hero">
+  <div class="hero-content">
+    <img src="/images/landLogo.png" alt="Midwest Landscaping Logo" class="logo">
+    <h1 class="hero-title">Midwest Landscaping</h1>
+    <p class="hero-subtitle">Professional lawn care & landscaping — transforming your outdoor space.</p>
+    <a href="/booking_ls" class="btn btn-primary">Book Your Service</a>
+  </div>
+  <div class="hero-overlay"></div>
+</header>
+
+<!-- Main Content -->
+<main>
+  <!-- About Section -->
+  <section class="section about-section">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">About Our Landscaping</h2>
+        <div class="title-underline"></div>
+      </div>
+      <div class="about-content">
+        <p class="about-text">
+          Midwest Property Landscaping brings the same dedication and quality you know from our detailing
+          services to your yard. From mowing and edging to mulching and full landscape makeovers, we
+          take pride in making your outdoor spaces look their best.
+        </p>
+
+        <!-- Gallery -->
+        <section class="section gallery-section">
+          <div class="container">
+            <div class="section-header">
+              <h2 class="section-title">Our Work</h2>
+              <div class="title-underline"></div>
+              <p class="section-description">See the transformation — before and during our landscaping projects.</p>
+            </div>
+            <div class="gallery-grid">
+              <figure class="gallery-item">
+                <img src="/images/BeforeLandscaping.jpg" alt="Before Landscaping" />
+                <figcaption>Before - Yard before service</figcaption>
+              </figure>
+              <figure class="gallery-item">
+                <img src="/images/DuringLandscaping.jpg" alt="During Landscaping" />
+                <figcaption>During - Landscaping in progress</figcaption>
+              </figure>
+            </div>
+          </div>
+        </section>
+
+        <!-- Customer Feedback -->
+        <section class="section feedback-section">
+          <div class="container">
+            <div class="section-header">
+              <h2 class="section-title">Customer Feedback</h2>
+              <div class="title-underline"></div>
+              <p class="section-description">Real reviews from our landscaping customers.</p>
+            </div>
+            <div class="feedback-card">
+              <div class="review">
+                <p class="review-text">"They came out and completely transformed our front yard. Mowed, edged, and laid fresh mulch — neighbors were asking who we used. Great value for the price."</p>
+                <p class="review-author">— Kevin S., Noblesville IN</p>
+              </div>
+              <div class="review">
+                <p class="review-text">"Hired them for mulching and a cleanup before we hosted a family event. They finished ahead of schedule and the yard looked better than it ever has. Will definitely book again."</p>
+                <p class="review-author">— Donna W., Westfield IN</p>
+              </div>
+              <div class="review">
+                <p class="review-text">"Really hardworking crew. Showed up when they said they would and did a thorough job on our backyard. Booking online was simple and straightforward."</p>
+                <p class="review-author">— Marcus L., Noblesville IN</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div class="about-features">
+          <div class="feature-card">
+            <div class="feature-icon">🌿</div>
+            <h3>Expert Lawn Care</h3>
+            <p>Mowing, edging, and trimming for a pristine yard</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">🏡</div>
+            <h3>Full-Service Landscaping</h3>
+            <p>Mulching, planting, and landscape design</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">💎</div>
+            <h3>Diamond Finish Quality</h3>
+            <p>The same attention to detail, now for your yard</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact Section -->
+  <section class="section contact-section">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">Contact Us</h2>
+        <div class="title-underline"></div>
+      </div>
+      <div class="contact-card">
+        <div class="contact-info">
+          <div class="contact-item">
+            <div class="contact-icon">📍</div>
+            <div>
+              <h3>Location</h3>
+              <p>Noblesville, IN 46062</p>
+            </div>
+          </div>
+          <div class="contact-item">
+            <div class="contact-icon">📞</div>
+            <div>
+              <h3>Phone</h3>
+              <p><a href="tel:+13176066747">(317) 606-6747</a></p>
+            </div>
+          </div>
+          <div class="contact-item">
+            <div class="contact-icon">⏰</div>
+            <div>
+              <h3>Hours</h3>
+              <p>Mon-Fri: 4:00 PM - 10:00 PM</p>
+            </div>
+          </div>
+        </div>
+        <div class="contact-cta">
+          <p>Ready to transform your yard?</p>
+          <a href="/booking_ls" class="btn btn-secondary">Schedule Now</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>

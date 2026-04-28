@@ -1,0 +1,20 @@
+<!-- Navigation -->
+<nav class="navbar">
+  <div class="container">
+    {{#if activeLandscaping}}
+    <a href="/landscaping" class="nav-brand">
+      <img src="/images/mpLogo.png" alt="Midwest Property Professionals" class="nav-logo">
+      <span>Midwest Property Professionals</span>
+    </a>
+    {{else}}
+    <a href="/" class="nav-brand">
+      <img src="/images/DFD.jpg" alt="Diamond Finish Detailing" class="nav-logo">
+      <span>Diamond Finish Detailing</span>
+    </a>
+    {{/if}}
+    <div class="nav-tabs">
+      <a href="/" class="nav-tab{{#if activeDetailing}} active{{/if}}">Detailing</a>
+      <a href="/landscaping" class="nav-tab{{#if activeLandscaping}} active{{/if}}">Landscaping</a>
+    </div>
+  </div>
+</nav>

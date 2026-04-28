@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{pageTitle}}</title>
+  <meta name="description" content="{{metaDescription}}">
+  <link rel="icon" href="/images/DFD.jpg" type="image/jpeg">
+  <link rel="stylesheet" href="/styles/styles.css">
+</head>
+<body>
+{{> navbar}}
+
+{{{body}}}
+
+{{> footer}}
+
+<script nonce="{{cspNonce}}">
+  document.getElementById('year').textContent = new Date().getFullYear();
+</script>
+</body>
+</html>

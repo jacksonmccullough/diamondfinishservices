@@ -798,6 +798,35 @@ a:hover {
     font-size: 1.05rem;
 }
 
+.review {
+    border-bottom: 1px solid var(--border);
+    padding: 1.25rem 0;
+    text-align: left;
+}
+
+.review:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.review:first-child {
+    padding-top: 0;
+}
+
+.review-text {
+    color: var(--foreground);
+    font-size: 1rem;
+    line-height: 1.6;
+    font-style: italic;
+    margin-bottom: 0.5rem;
+}
+
+.review-author {
+    color: var(--muted-foreground);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
 /* ============================================
    CUSTOM MODAL
    ============================================ */
