@@ -1,12 +1,10 @@
 require('dotenv').config();
-const dns = require('dns');
-dns.setDefaultResultOrder('ipv4first'); // Force IPv4 on Railway (outbound IPv6 is blocked)
 const express = require('express');
 const path = require('path');
 const mongoose = require('mongoose');
 const crypto = require('crypto');
 const { engine } = require('express-handlebars');
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const mongoSanitize = require('express-mongo-sanitize');
@@ -18,33 +16,19 @@ const cron = require('node-cron');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Nodemailer setup (Gmail SMTP — explicit host/port for Railway compatibility)
-if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
-  console.warn('⚠ WARNING: GMAIL_USER or GMAIL_APP_PASSWORD env var is not set. Emails will not be sent.');
+// Resend setup (sends over HTTPS — works on Railway, no SMTP port issues)
+if (!process.env.RESEND_API_KEY) {
+  console.warn('⚠ WARNING: RESEND_API_KEY env var is not set. Emails will not be sent.');
 }
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587,
-  secure: false, // STARTTLS
-  family: 4, // Force IPv4 — Railway does not support outbound IPv6
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_APP_PASSWORD
-  },
-  tls: {
-    rejectUnauthorized: true
-  }
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-// Verify SMTP connection on startup so errors appear in Railway logs
-transporter.verify(function(err) {
-  if (err) {
-    console.error('SMTP connection failed:', err.message);
-    console.error('Emails will not be sent. Check GMAIL_USER, GMAIL_APP_PASSWORD, and that a Gmail App Password is configured.');
-  } else {
-    console.log('SMTP connection verified — emails are ready to send.');
+// Helper: send an email via Resend and log any errors
+async function sendEmail(options) {
+  const { error } = await resend.emails.send(options);
+  if (error) {
+    throw new Error(error.message);
   }
-});
+}
 
 // Generate a unique 8-character order number like "DF-A3K9M2X1"
 function generateOrderNumber() {
@@ -374,9 +358,9 @@ app.post('/api/bookings', bookingLimiter, async (req, res) => {
     const humanTime = timeLabels[time] || time;
     const humanDate = formatBookingDate(date);
     try {
-      await transporter.sendMail({
-        from: `"Diamond Finish" <${process.env.GMAIL_USER}>`,
-        to: email,
+      await sendEmail({
+        from: 'Diamond Finish <confirmation@diamondfinishservices.org>',
+        to: [email],
         subject: `Booking Confirmed — Order #${orderNumber}`,
         text: `Diamond Finish Confirmation\n\nOrder #: ${orderNumber}\nName: ${name}\nService: ${service}\nDate: ${humanDate}\nTime: ${humanTime}\nPhone: ${phone}\nCity: ${city}\n\nSave this order number to cancel or modify your appointment.`,
         html: `
@@ -399,11 +383,11 @@ app.post('/api/bookings', bookingLimiter, async (req, res) => {
     }
 
     // Notify owner of new detailing booking
-    const ownerEmail = process.env.OWNER_EMAIL || process.env.GMAIL_USER;
+    const ownerEmail = process.env.OWNER_EMAIL;
     try {
-      await transporter.sendMail({
-        from: `"Diamond Finish" <${process.env.GMAIL_USER}>`,
-        to: ownerEmail,
+      await sendEmail({
+        from: 'Diamond Finish <confirmation@diamondfinishservices.org>',
+        to: [ownerEmail],
         subject: `New Detailing Booking — Order #${orderNumber}`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
@@ -520,9 +504,9 @@ app.post('/api/bookings_ls', bookingLimiter, async (req, res) => {
     const humanTime = timeLabels[time] || time;
     const humanDate = formatBookingDate(date);
     try {
-      await transporter.sendMail({
-        from: `"Midwest Landscaping" <${process.env.GMAIL_USER}>`,
-        to: email,
+      await sendEmail({
+        from: 'Midwest Landscaping <confirmation@diamondfinishservices.org>',
+        to: [email],
         subject: `Landscaping Booking Confirmed — Order #${orderNumber}`,
         text: `Midwest Landscaping Confirmation\n\nOrder #: ${orderNumber}\nName: ${name}\nService: ${service}\nDate: ${humanDate}\nTime: ${humanTime}\nPhone: ${phone}\nCity: ${city}\n\nSave this order number to cancel or modify your appointment.`,
         html: `<div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;"><h2 style="color: #1a1a1a; border-bottom: 2px solid #555; padding-bottom: 10px;">Midwest Landscaping Confirmation ✅</h2><table style="width: 100%; border-collapse: collapse; margin: 16px 0;"><tr><td style="padding: 8px 0; font-weight: bold;">Order #</td><td style="padding: 8px 0;">${escapeHtml(orderNumber)}</td></tr><tr><td style="padding: 8px 0; font-weight: bold;">Name</td><td style="padding: 8px 0;">${escapeHtml(name)}</td></tr><tr><td style="padding: 8px 0; font-weight: bold;">Service</td><td style="padding: 8px 0;">${escapeHtml(service)}</td></tr><tr><td style="padding: 8px 0; font-weight: bold;">Date</td><td style="padding: 8px 0;">${escapeHtml(humanDate)}</td></tr><tr><td style="padding: 8px 0; font-weight: bold;">Time</td><td style="padding: 8px 0;">${escapeHtml(humanTime)}</td></tr></table><p style="color: #555; font-size: 14px; margin-top: 16px;">Save this order number to cancel or modify your appointment.</p></div>`
@@ -532,11 +516,11 @@ app.post('/api/bookings_ls', bookingLimiter, async (req, res) => {
     }
 
     // Notify owner of new landscaping booking
-    const ownerEmailLS = process.env.OWNER_EMAIL || process.env.GMAIL_USER;
+    const ownerEmailLS = process.env.OWNER_EMAIL;
     try {
-      await transporter.sendMail({
-        from: `"Midwest Landscaping" <${process.env.GMAIL_USER}>`,
-        to: ownerEmailLS,
+      await sendEmail({
+        from: 'Midwest Landscaping <confirmation@diamondfinishservices.org>',
+        to: [ownerEmailLS],
         subject: `New Landscaping Booking — Order #${orderNumber}`,
         html: `<div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;"><h2 style="color: #1a1a1a; border-bottom: 2px solid #555; padding-bottom: 10px;">New Landscaping Booking 🌿</h2><table style="width: 100%; border-collapse: collapse; margin: 16px 0;"><tr><td style="padding: 8px 0; font-weight: bold;">Order #</td><td style="padding: 8px 0;">${escapeHtml(orderNumber)}</td></tr><tr><td style="padding: 8px 0; font-weight: bold;">Name</td><td style="padding: 8px 0;">${escapeHtml(name)}</td></tr><tr><td style="padding: 8px 0; font-weight: bold;">Email</td><td style="padding: 8px 0;">${escapeHtml(email)}</td></tr><tr><td style="padding: 8px 0; font-weight: bold;">Phone</td><td style="padding: 8px 0;">${escapeHtml(phone)}</td></tr><tr><td style="padding: 8px 0; font-weight: bold;">City</td><td style="padding: 8px 0;">${escapeHtml(city)}</td></tr><tr><td style="padding: 8px 0; font-weight: bold;">Service</td><td style="padding: 8px 0;">${escapeHtml(service)}</td></tr><tr><td style="padding: 8px 0; font-weight: bold;">Date</td><td style="padding: 8px 0;">${escapeHtml(humanDate)}</td></tr><tr><td style="padding: 8px 0; font-weight: bold;">Time</td><td style="padding: 8px 0;">${escapeHtml(humanTime)}</td></tr></table></div>`
       });
@@ -582,9 +566,9 @@ app.delete('/api/bookings_ls/cancel', bookingLimiter, async (req, res) => {
 
     // Notify customer of cancellation
     try {
-      await transporter.sendMail({
-        from: `"Midwest Landscaping" <${process.env.GMAIL_USER}>`,
-        to: result.email,
+      await sendEmail({
+        from: 'Midwest Landscaping <confirmation@diamondfinishservices.org>',
+        to: [result.email],
         subject: `Landscaping Booking Cancelled — Order #${result.orderNumber}`,
         text: `Midwest Landscaping Cancellation\n\nOrder #: ${result.orderNumber}\nName: ${result.name}\nService: ${result.service}\nDate: ${humanDate}\nTime: ${humanTime}\n\nYour booking has been cancelled. If this was a mistake, please book a new appointment.`,
         html: `<div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;"><h2 style="color: #1a1a1a; border-bottom: 2px solid #555; padding-bottom: 10px;">Booking Cancelled ❌</h2><p style="color: #555;">Your landscaping appointment has been cancelled.</p><table style="width: 100%; border-collapse: collapse; margin: 16px 0;"><tr><td style="padding: 8px 0; font-weight: bold;">Order #</td><td style="padding: 8px 0;">${escapeHtml(result.orderNumber)}</td></tr><tr><td style="padding: 8px 0; font-weight: bold;">Name</td><td style="padding: 8px 0;">${escapeHtml(result.name)}</td></tr><tr><td style="padding: 8px 0; font-weight: bold;">Service</td><td style="padding: 8px 0;">${escapeHtml(result.service)}</td></tr><tr><td style="padding: 8px 0; font-weight: bold;">Date</td><td style="padding: 8px 0;">${escapeHtml(humanDate)}</td></tr><tr><td style="padding: 8px 0; font-weight: bold;">Time</td><td style="padding: 8px 0;">${escapeHtml(humanTime)}</td></tr></table><p style="color: #555; font-size: 14px;">If this was a mistake, please visit our site to rebook.</p></div>`
@@ -594,11 +578,11 @@ app.delete('/api/bookings_ls/cancel', bookingLimiter, async (req, res) => {
     }
 
     // Notify owner of cancellation
-    const ownerEmailLS = process.env.OWNER_EMAIL || process.env.GMAIL_USER;
+    const ownerEmailLS = process.env.OWNER_EMAIL;
     try {
-      await transporter.sendMail({
-        from: `"Midwest Landscaping" <${process.env.GMAIL_USER}>`,
-        to: ownerEmailLS,
+      await sendEmail({
+        from: 'Midwest Landscaping <confirmation@diamondfinishservices.org>',
+        to: [ownerEmailLS],
         subject: `Landscaping Booking Cancelled — Order #${result.orderNumber}`,
         html: `<div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;"><h2 style="color: #1a1a1a; border-bottom: 2px solid #555; padding-bottom: 10px;">Landscaping Booking Cancelled 🌿</h2><table style="width: 100%; border-collapse: collapse; margin: 16px 0;"><tr><td style="padding: 8px 0; font-weight: bold;">Order #</td><td style="padding: 8px 0;">${escapeHtml(result.orderNumber)}</td></tr><tr><td style="padding: 8px 0; font-weight: bold;">Name</td><td style="padding: 8px 0;">${escapeHtml(result.name)}</td></tr><tr><td style="padding: 8px 0; font-weight: bold;">Email</td><td style="padding: 8px 0;">${escapeHtml(result.email)}</td></tr><tr><td style="padding: 8px 0; font-weight: bold;">Phone</td><td style="padding: 8px 0;">${escapeHtml(result.phone)}</td></tr><tr><td style="padding: 8px 0; font-weight: bold;">Service</td><td style="padding: 8px 0;">${escapeHtml(result.service)}</td></tr><tr><td style="padding: 8px 0; font-weight: bold;">Date</td><td style="padding: 8px 0;">${escapeHtml(humanDate)}</td></tr><tr><td style="padding: 8px 0; font-weight: bold;">Time</td><td style="padding: 8px 0;">${escapeHtml(humanTime)}</td></tr></table></div>`
       });
@@ -642,9 +626,9 @@ app.delete('/api/bookings/cancel', bookingLimiter, async (req, res) => {
 
     // Notify customer of cancellation
     try {
-      await transporter.sendMail({
-        from: `"Diamond Finish" <${process.env.GMAIL_USER}>`,
-        to: result.email,
+      await sendEmail({
+        from: 'Diamond Finish <confirmation@diamondfinishservices.org>',
+        to: [result.email],
         subject: `Booking Cancelled — Order #${result.orderNumber}`,
         text: `Diamond Finish Cancellation\n\nOrder #: ${result.orderNumber}\nName: ${result.name}\nService: ${result.service}\nDate: ${humanDate}\nTime: ${humanTime}\n\nYour booking has been cancelled. If this was a mistake, please book a new appointment.`,
         html: `
@@ -667,11 +651,11 @@ app.delete('/api/bookings/cancel', bookingLimiter, async (req, res) => {
     }
 
     // Notify owner of cancellation
-    const ownerEmail = process.env.OWNER_EMAIL || process.env.GMAIL_USER;
+    const ownerEmail = process.env.OWNER_EMAIL;
     try {
-      await transporter.sendMail({
-        from: `"Diamond Finish" <${process.env.GMAIL_USER}>`,
-        to: ownerEmail,
+      await sendEmail({
+        from: 'Diamond Finish <confirmation@diamondfinishservices.org>',
+        to: [ownerEmail],
         subject: `Detailing Booking Cancelled — Order #${result.orderNumber}`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
