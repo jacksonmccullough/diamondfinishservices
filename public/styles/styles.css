@@ -540,12 +540,12 @@ a:hover {
 
 .schedule-grid {
     display: grid;
-    min-width: 600px;
+    min-width: max-content;
 }
 
 .grid-row {
     display: grid;
-    grid-template-columns: 140px repeat(5, 1fr);
+    /* columns set inline by JS based on rolling window size */
     gap: 0.5rem;
     margin-bottom: 0.5rem;
 }
@@ -1008,7 +1008,7 @@ a:hover {
     }
 
     .grid-row {
-        grid-template-columns: 110px repeat(5, 1fr);
+        /* columns inherited from inline style set by JS */
         gap: 0.25rem;
     }
 

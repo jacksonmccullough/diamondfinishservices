@@ -124,48 +124,11 @@
       </div>
 
       <div id="schedule-wrapper">
-        <h3 class="schedule-title">Weekly Schedule (Mon–Fri)</h3>
+        <h3 class="schedule-title">Upcoming Schedule</h3>
 
         <div class="schedule-container">
           <div id="schedule-grid" class="schedule-grid" role="table">
-            <div class="grid-row grid-header">
-              <div class="grid-cell grid-time-col">Time</div>
-              <div class="grid-cell">Monday</div>
-              <div class="grid-cell">Tuesday</div>
-              <div class="grid-cell">Wednesday</div>
-              <div class="grid-cell">Thursday</div>
-              <div class="grid-cell">Friday</div>
-            </div>
-
-            <!-- 4-6pm -->
-            <div class="grid-row">
-              <div class="grid-cell grid-time-col">4:00 - 6:00 PM</div>
-              <div class="grid-cell"><div class="slot available" data-day="Monday" data-time="16-18">Available</div></div>
-              <div class="grid-cell"><div class="slot available" data-day="Tuesday" data-time="16-18">Available</div></div>
-              <div class="grid-cell"><div class="slot available" data-day="Wednesday" data-time="16-18">Available</div></div>
-              <div class="grid-cell"><div class="slot available" data-day="Thursday" data-time="16-18">Available</div></div>
-              <div class="grid-cell"><div class="slot available" data-day="Friday" data-time="16-18">Available</div></div>
-            </div>
-
-            <!-- 6-8pm -->
-            <div class="grid-row">
-              <div class="grid-cell grid-time-col">6:00 - 8:00 PM</div>
-              <div class="grid-cell"><div class="slot available" data-day="Monday" data-time="18-20">Available</div></div>
-              <div class="grid-cell"><div class="slot available" data-day="Tuesday" data-time="18-20">Available</div></div>
-              <div class="grid-cell"><div class="slot available" data-day="Wednesday" data-time="18-20">Available</div></div>
-              <div class="grid-cell"><div class="slot available" data-day="Thursday" data-time="18-20">Available</div></div>
-              <div class="grid-cell"><div class="slot available" data-day="Friday" data-time="18-20">Available</div></div>
-            </div>
-
-            <!-- 8-10pm -->
-            <div class="grid-row">
-              <div class="grid-cell grid-time-col">8:00 - 10:00 PM</div>
-              <div class="grid-cell"><div class="slot available" data-day="Monday" data-time="20-22">Available</div></div>
-              <div class="grid-cell"><div class="slot available" data-day="Tuesday" data-time="20-22">Available</div></div>
-              <div class="grid-cell"><div class="slot available" data-day="Wednesday" data-time="20-22">Available</div></div>
-              <div class="grid-cell"><div class="slot available" data-day="Thursday" data-time="20-22">Available</div></div>
-              <div class="grid-cell"><div class="slot available" data-day="Friday" data-time="20-22">Available</div></div>
-            </div>
+            <!-- Dynamically populated by buildGrid() -->
           </div>
         </div>
 
@@ -209,11 +172,106 @@
 </div>
 
 <script nonce="{{cspNonce}}">
+  // ─── Rolling window configuration ───
+  const WINDOW_SIZE = 10; // next 10 weekdays displayed
+
+  const TIME_SLOTS = [
+    { key: '16-18', label: '4:00 - 6:00 PM' },
+    { key: '18-20', label: '6:00 - 8:00 PM' },
+    { key: '20-22', label: '8:00 - 10:00 PM' }
+  ];
+
   let bookings = [];
 
+  // Returns an array of the next `count` weekday Date objects starting from today
+  function getNextWeekdays(count) {
+    const dates = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    let cursor = new Date(today);
+    while (dates.length < count) {
+      const dow = cursor.getDay();
+      if (dow >= 1 && dow <= 5) {
+        dates.push(new Date(cursor));
+      }
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    return dates;
+  }
+
+  // Format a Date as YYYY-MM-DD (used as the canonical slot key)
+  function formatDateKey(d) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  // Format a Date as a compact column header, e.g. "Mon 5/6"
+  function formatDateLabel(d) {
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    return dayNames[d.getDay()] + ' ' + (d.getMonth() + 1) + '/' + d.getDate();
+  }
+
+  // Format a YYYY-MM-DD string as a readable date for confirmations
+  function formatDateFull(dateStr) {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const dateObj = new Date(y, m - 1, d);
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    return dayNames[dateObj.getDay()] + ', ' + dateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  }
+
+  // Build the schedule grid dynamically and attach slot click listeners
+  function buildGrid() {
+    const grid = document.getElementById('schedule-grid');
+    const windowDates = getNextWeekdays(WINDOW_SIZE);
+    const colStyle = `grid-template-columns: 140px repeat(${windowDates.length}, minmax(110px, 1fr))`;
+
+    // Update title with date range
+    const first = windowDates[0];
+    const last = windowDates[windowDates.length - 1];
+    const opts = { month: 'short', day: 'numeric' };
+    document.querySelector('.schedule-title').textContent =
+      'Upcoming Schedule (' + first.toLocaleDateString('en-US', opts) + ' \u2013 ' + last.toLocaleDateString('en-US', opts) + ')';
+
+    let html = '';
+
+    // Header row
+    html += `<div class="grid-row grid-header" style="${colStyle}">`;
+    html += '<div class="grid-cell grid-time-col">Time</div>';
+    windowDates.forEach(function(d) {
+      html += '<div class="grid-cell">' + formatDateLabel(d) + '</div>';
+    });
+    html += '</div>';
+
+    // Time-slot rows
+    TIME_SLOTS.forEach(function(slot) {
+      html += `<div class="grid-row" style="${colStyle}">`;
+      html += '<div class="grid-cell grid-time-col">' + slot.label + '</div>';
+      windowDates.forEach(function(d) {
+        const dateKey = formatDateKey(d);
+        html += '<div class="grid-cell">' +
+          '<div class="slot available" data-date="' + dateKey + '" data-time="' + slot.key + '">' +
+          '<div class="slot-time">' + slot.label + '</div>' +
+          '<div class="slot-status">Available</div>' +
+          '</div></div>';
+      });
+      html += '</div>';
+    });
+
+    grid.innerHTML = html;
+
+    // Attach click handlers to all newly created slots
+    grid.querySelectorAll('.slot').forEach(function(cell) {
+      cell.addEventListener('click', handleSlotClick);
+    });
+  }
+
   // Custom Modal Functions
-  function showModal(title, message, type = 'alert', inputPlaceholder = '') {
-    return new Promise((resolve) => {
+  function showModal(title, message, type, inputPlaceholder) {
+    type = type || 'alert';
+    inputPlaceholder = inputPlaceholder || '';
+    return new Promise(function(resolve) {
       const modal = document.getElementById('customModal');
       const modalTitle = document.getElementById('modalTitle');
       const modalMessage = document.getElementById('modalMessage');
@@ -249,7 +307,7 @@
 
       modal.classList.add('active');
 
-      const handleConfirm = () => {
+      function handleConfirm() {
         modal.classList.remove('active');
         confirmBtn.removeEventListener('click', handleConfirm);
         cancelBtn.removeEventListener('click', handleCancel);
@@ -257,14 +315,12 @@
           resolve(modalSelect.value || null);
         } else if (type === 'prompt') {
           resolve(modalInput.value.trim());
-        } else if (type === 'confirm') {
-          resolve(true);
         } else {
           resolve(true);
         }
-      };
+      }
 
-      const handleCancel = () => {
+      function handleCancel() {
         modal.classList.remove('active');
         confirmBtn.removeEventListener('click', handleConfirm);
         cancelBtn.removeEventListener('click', handleCancel);
@@ -273,13 +329,13 @@
         } else {
           resolve(false);
         }
-      };
+      }
 
       confirmBtn.addEventListener('click', handleConfirm);
       cancelBtn.addEventListener('click', handleCancel);
 
       if (type === 'prompt') {
-        setTimeout(() => modalInput.focus(), 100);
+        setTimeout(function() { modalInput.focus(); }, 100);
       }
     });
   }
@@ -294,20 +350,15 @@
     }
   }
 
-  function findBooking(day, time) {
-    return bookings.find(b => b.day === day && b.time === time);
-  }
-
-  function slotKey(day, time) {
-    return day + '|' + time;
+  function findBooking(date, time) {
+    return bookings.find(function(b) { return b.date === date && b.time === time; });
   }
 
   function render() {
-    const slots = document.querySelectorAll('.slot');
-    slots.forEach(function(cell) {
-      const day = cell.dataset.day;
+    document.querySelectorAll('.slot').forEach(function(cell) {
+      const date = cell.dataset.date;
       const time = cell.dataset.time;
-      const r = findBooking(day, time);
+      const r = findBooking(date, time);
       const human = humanTimeLabel(time);
 
       if (r) {
@@ -323,18 +374,12 @@
   }
 
   function humanTimeLabel(time) {
-    switch(time) {
+    switch (time) {
       case '16-18': return '4:00 - 6:00 PM';
       case '18-20': return '6:00 - 8:00 PM';
       case '20-22': return '8:00 - 10:00 PM';
       default: return time;
     }
-  }
-
-  function escapeHtml(str) {
-    return String(str).replace(/[&<>"']/g, function(ch) {
-      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];
-    });
   }
 
   function validatePhone(phone) {
@@ -365,125 +410,92 @@
     return re.test(email.trim());
   }
 
+  async function handleSlotClick() {
+    const date = this.dataset.date;
+    const time = this.dataset.time;
+    const existing = findBooking(date, time);
+    const displayDate = formatDateFull(date);
+
+    if (existing) {
+      await showModal(
+        'Slot Reserved',
+        'This time slot is already reserved.\nService: ' + (existing.service || 'N/A')
+      );
+      return;
+    }
+
+    let name = null;
+    for (let attempts = 0; attempts < 3; attempts++) {
+      const n = await showModal('Enter Your Name', 'Please enter your full name (letters, spaces, hyphens, apostrophes):', 'prompt', 'John Doe');
+      if (!n) { await showModal('Cancelled', 'Reservation cancelled - name is required.'); break; }
+      if (validateName(n)) { name = n.trim(); break; }
+      await showModal('Invalid Name', 'Name not valid. Use letters, spaces, hyphens or apostrophes (2-50 chars).');
+    }
+    if (!name) return;
+
+    let phone = null;
+    for (let attempts = 0; attempts < 3; attempts++) {
+      const p = await showModal('Enter Phone Number', 'Please enter your phone number:', 'prompt', '(317) 555-0123');
+      if (!p) { await showModal('Cancelled', 'Reservation cancelled - phone is required.'); break; }
+      if (validatePhone(p)) { phone = p.trim(); break; }
+      await showModal('Invalid Phone', 'Phone number not valid. Please enter a valid phone (7-15 digits).');
+    }
+    if (!phone) return;
+
+    let email = null;
+    for (let attempts = 0; attempts < 3; attempts++) {
+      const e = await showModal('Enter Your Email', 'Please enter your email address for your confirmation:', 'prompt', 'john@example.com');
+      if (!e) { await showModal('Cancelled', 'Reservation cancelled - email is required.'); break; }
+      if (validateEmail(e)) { email = e.trim(); break; }
+      await showModal('Invalid Email', 'Please enter a valid email address.');
+    }
+    if (!email) return;
+
+    let city = null;
+    for (let attempts = 0; attempts < 3; attempts++) {
+      const c = await showModal('Enter Your City', 'Please enter your city:', 'prompt', 'Noblesville');
+      if (!c) { await showModal('Cancelled', 'Reservation cancelled - city is required.'); break; }
+      if (c.trim().length >= 2) { city = c.trim(); break; }
+      await showModal('Invalid City', 'Please enter a valid city name (at least 2 characters).');
+    }
+    if (!city) return;
+
+    const service = await showModal('Select Service', 'Choose the service you would like:', 'select');
+    if (!service || !validateService(service)) {
+      if (service === null) {
+        await showModal('Cancelled', 'Reservation cancelled.');
+      } else {
+        await showModal('Invalid Service', 'Please select a valid service.');
+      }
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/bookings_ls', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, phone, city, service, date, time })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        await showModal('Error', data.error || 'Failed to create booking.');
+        return;
+      }
+      await fetchBookings();
+      render();
+      await showModal(
+        'Booking Confirmed!',
+        'Order #: ' + data.orderNumber + '\n\nReservation for ' + name + ' on ' + displayDate + ' (' + humanTimeLabel(time) + ').\n\nA confirmation email has been sent to ' + email + '. Save your order number to cancel if needed.'
+      );
+    } catch (err) {
+      await showModal('Error', 'Could not connect to server. Please try again.');
+    }
+  }
+
   document.addEventListener('DOMContentLoaded', async function() {
     await fetchBookings();
+    buildGrid();
     render();
-
-    // Slot click handler - book or view reservation
-    document.querySelectorAll('.slot').forEach(function(cell) {
-      cell.addEventListener('click', async function() {
-        const day = this.dataset.day;
-        const time = this.dataset.time;
-        const existing = findBooking(day, time);
-
-        if (existing) {
-          await showModal(
-            'Slot Reserved',
-            'This time slot is already reserved.\nService: ' + (existing.service || 'N/A')
-          );
-        } else {
-          let name = null;
-          for (let attempts = 0; attempts < 3; attempts++) {
-            const n = await showModal(
-              'Enter Your Name',
-              'Please enter your full name (letters, spaces, hyphens, apostrophes):',
-              'prompt',
-              'John Doe'
-            );
-            if (!n) {
-              await showModal('Cancelled', 'Reservation cancelled - name is required.');
-              break;
-            }
-            if (validateName(n)) { name = n.trim(); break; }
-            await showModal('Invalid Name', 'Name not valid. Use letters, spaces, hyphens or apostrophes (2-50 chars).');
-          }
-          if (!name) return;
-
-          let phone = null;
-          for (let attempts = 0; attempts < 3; attempts++) {
-            const p = await showModal(
-              'Enter Phone Number',
-              'Please enter your phone number:',
-              'prompt',
-              '(317) 555-0123'
-            );
-            if (!p) {
-              await showModal('Cancelled', 'Reservation cancelled - phone is required.');
-              break;
-            }
-            if (validatePhone(p)) { phone = p.trim(); break; }
-            await showModal('Invalid Phone', 'Phone number not valid. Please enter a valid phone (7-15 digits).');
-          }
-          if (!phone) return;
-
-          let email = null;
-          for (let attempts = 0; attempts < 3; attempts++) {
-            const e = await showModal(
-              'Enter Your Email',
-              'Please enter your email address for your confirmation:',
-              'prompt',
-              'john@example.com'
-            );
-            if (!e) {
-              await showModal('Cancelled', 'Reservation cancelled - email is required.');
-              break;
-            }
-            if (validateEmail(e)) { email = e.trim(); break; }
-            await showModal('Invalid Email', 'Please enter a valid email address.');
-          }
-          if (!email) return;
-
-          let city = null;
-          for (let attempts = 0; attempts < 3; attempts++) {
-            const c = await showModal(
-              'Enter Your City',
-              'Please enter your city:',
-              'prompt',
-              'Noblesville'
-            );
-            if (!c) {
-              await showModal('Cancelled', 'Reservation cancelled - city is required.');
-              break;
-            }
-            if (c.trim().length >= 2) { city = c.trim(); break; }
-            await showModal('Invalid City', 'Please enter a valid city name (at least 2 characters).');
-          }
-          if (!city) return;
-
-          const service = await showModal(
-            'Select Service',
-            'Choose the service you would like:',
-            'select'
-          );
-          if (!service || !validateService(service)) {
-            if (service === null) {
-              await showModal('Cancelled', 'Reservation cancelled.');
-            } else {
-              await showModal('Invalid Service', 'Please select a valid service.');
-            }
-            return;
-          }
-
-          try {
-            const res = await fetch('/api/bookings_ls', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ name, email, phone, city, service, day, time })
-            });
-            const data = await res.json();
-            if (!res.ok) {
-              await showModal('Error', data.error || 'Failed to create booking.');
-              return;
-            }
-            await fetchBookings();
-            render();
-            await showModal('Booking Confirmed!', 'Order #: ' + data.orderNumber + '\n\nReservation for ' + name + ' on ' + day + ' (' + humanTimeLabel(time) + ').\n\nA confirmation email has been sent to ' + email + '. Save your order number to cancel if needed.');
-          } catch (err) {
-            await showModal('Error', 'Could not connect to server. Please try again.');
-          }
-        }
-      });
-    });
 
     // Cancel by order number button
     document.getElementById('cancelByOrderBtn').addEventListener('click', async function() {
@@ -493,18 +505,11 @@
         await showModal('Error', 'Please enter your order number to cancel.');
         return;
       }
-
-      // Validate order number format (DF- followed by 8 alphanumeric chars)
       if (!/^DF-[A-Z0-9]{8}$/.test(orderNumber)) {
         await showModal('Invalid Order Number', 'Order numbers look like DF-A3K9M2X1. Please check and try again.');
         return;
       }
-
-      const confirmed = await showModal(
-        'Confirm Cancellation',
-        'Are you sure you want to cancel order ' + orderNumber + '?',
-        'confirm'
-      );
+      const confirmed = await showModal('Confirm Cancellation', 'Are you sure you want to cancel order ' + orderNumber + '?', 'confirm');
       if (!confirmed) return;
 
       try {
