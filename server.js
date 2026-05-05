@@ -1,4 +1,6 @@
 require('dotenv').config();
+const dns = require('dns');
+dns.setDefaultResultOrder('ipv4first'); // Force IPv4 on Railway (outbound IPv6 is blocked)
 const express = require('express');
 const path = require('path');
 const mongoose = require('mongoose');
