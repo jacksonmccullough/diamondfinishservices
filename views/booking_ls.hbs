@@ -342,7 +342,11 @@
 
   async function fetchBookings() {
     try {
-      const res = await fetch('/api/bookings_ls');
+      const res = await fetch('/api/bookings_ls', { cache: 'no-store' });
+      if (!res.ok) {
+        bookings = [];
+        return;
+      }
       bookings = await res.json();
     } catch (e) {
       console.error('Failed to fetch bookings', e);

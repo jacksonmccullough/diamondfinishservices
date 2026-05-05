@@ -271,7 +271,7 @@
 
   async function fetchBookings() {
     try {
-      const res = await fetch('/api/bookings');
+      const res = await fetch('/api/bookings', { cache: 'no-store' });
       if (!res.ok) {
         bookings = [];
         return;

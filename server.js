@@ -16,12 +16,30 @@ const cron = require('node-cron');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Nodemailer setup (Gmail SMTP)
+// Nodemailer setup (Gmail SMTP — explicit host/port for Railway compatibility)
+if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
+  console.warn('⚠ WARNING: GMAIL_USER or GMAIL_APP_PASSWORD env var is not set. Emails will not be sent.');
+}
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 587,
+  secure: false, // STARTTLS
   auth: {
     user: process.env.GMAIL_USER,
     pass: process.env.GMAIL_APP_PASSWORD
+  },
+  tls: {
+    rejectUnauthorized: true
+  }
+});
+
+// Verify SMTP connection on startup so errors appear in Railway logs
+transporter.verify(function(err) {
+  if (err) {
+    console.error('SMTP connection failed:', err.message);
+    console.error('Emails will not be sent. Check GMAIL_USER, GMAIL_APP_PASSWORD, and that a Gmail App Password is configured.');
+  } else {
+    console.log('SMTP connection verified — emails are ready to send.');
   }
 });
 
@@ -262,6 +280,7 @@ app.get('/api/bookings', async (req, res) => {
       { date: { $in: windowDates } },
       { name: 0, email: 0, phone: 0, city: 0, __v: 0 }
     );
+    res.setHeader('Cache-Control', 'no-store');
     res.json(bookings);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch bookings' });
@@ -403,6 +422,7 @@ app.post('/api/bookings', bookingLimiter, async (req, res) => {
       console.error('Owner notification email failed (detailing):', ownerEmailErr.message);
     }
 
+    res.setHeader('Cache-Control', 'no-store');
     res.status(201).json({
       orderNumber: booking.orderNumber,
       service: booking.service,
@@ -426,6 +446,7 @@ app.get('/api/bookings_ls', async (req, res) => {
       { date: { $in: windowDates } },
       { name: 0, email: 0, phone: 0, city: 0, __v: 0 }
     );
+    res.setHeader('Cache-Control', 'no-store');
     res.json(bookings);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch bookings' });
@@ -520,6 +541,7 @@ app.post('/api/bookings_ls', bookingLimiter, async (req, res) => {
       console.error('Owner notification email failed (landscaping):', ownerEmailErr.message);
     }
 
+    res.setHeader('Cache-Control', 'no-store');
     res.status(201).json({
       orderNumber: booking.orderNumber,
       service: booking.service,
@@ -581,6 +603,7 @@ app.delete('/api/bookings_ls/cancel', bookingLimiter, async (req, res) => {
       console.error('Landscaping cancellation owner email failed:', ownerEmailErr.message);
     }
 
+    res.setHeader('Cache-Control', 'no-store');
     res.json({
       message: 'Booking cancelled successfully',
       orderNumber: result.orderNumber,
@@ -666,6 +689,7 @@ app.delete('/api/bookings/cancel', bookingLimiter, async (req, res) => {
       console.error('Detailing cancellation owner email failed:', ownerEmailErr.message);
     }
 
+    res.setHeader('Cache-Control', 'no-store');
     res.json({
       message: 'Booking cancelled successfully',
       orderNumber: result.orderNumber,
