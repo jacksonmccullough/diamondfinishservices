@@ -73,6 +73,22 @@ mongoose.connect(process.env.MONGODB_URI)
     if (d.deletedCount || ls.deletedCount) {
       console.log(`[Migration] Removed ${d.deletedCount} legacy detailing and ${ls.deletedCount} legacy landscaping bookings.`);
     }
+    // ─── Index migration: drop stale indexes (e.g. old `day_1_time_1`) and sync to
+    //     current schema definitions so the correct `date_1_time_1` unique index is used ───
+    const [bookingSync, bookingLSSync] = await Promise.allSettled([
+      Booking.syncIndexes(),
+      BookingLS.syncIndexes()
+    ]);
+    if (bookingSync.status === 'rejected') {
+      console.error('[Migration] Failed to sync Booking indexes:', bookingSync.reason);
+    } else {
+      console.log('[Migration] Booking indexes synced.');
+    }
+    if (bookingLSSync.status === 'rejected') {
+      console.error('[Migration] Failed to sync BookingLS indexes:', bookingLSSync.reason);
+    } else {
+      console.log('[Migration] BookingLS indexes synced.');
+    }
   })
   .catch(err => console.error('MongoDB connection error:', err));
 
