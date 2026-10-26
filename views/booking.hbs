@@ -1,4 +1,4 @@
-.<!-- Main Content -->
+<!-- Main Content -->
 <main class="booking-page">
   <!-- Services Section -->
   <section class="section services-section">
@@ -103,6 +103,8 @@
 <script nonce="{{cspNonce}}">
   // ─── Rolling window configuration ───
   const WINDOW_SIZE = 10; // next 10 weekdays displayed
+  const BOOKING_BLACKOUT_DAYS = 14;
+  const BOOKING_BLACKOUT_ENABLED = true;
 
   const TIME_SLOTS = [
     { key: '16-18', label: '4:00 - 6:00 PM' },
@@ -111,6 +113,32 @@
   ];
 
   let bookings = [];
+
+  function getBookingBlackoutDates() {
+    const dates = new Set();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const blackoutEnd = new Date(today);
+    blackoutEnd.setDate(blackoutEnd.getDate() + BOOKING_BLACKOUT_DAYS);
+
+    let cursor = new Date(today);
+    while (cursor <= blackoutEnd) {
+      const dow = cursor.getDay();
+      if (dow >= 1 && dow <= 5) {
+        const y = cursor.getFullYear();
+        const m = String(cursor.getMonth() + 1).padStart(2, '0');
+        const d = String(cursor.getDate()).padStart(2, '0');
+        dates.add(`${y}-${m}-${d}`);
+      }
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    return dates;
+  }
+
+  function isBookingBlackoutDate(dateStr) {
+    return BOOKING_BLACKOUT_ENABLED && getBookingBlackoutDates().has(dateStr);
+  }
 
   // Returns an array of the next `count` weekday Date objects starting from today
   function getNextWeekdays(count) {
@@ -179,10 +207,11 @@
       html += '<div class="grid-cell grid-time-col">' + slot.label + '</div>';
       windowDates.forEach(function(d) {
         const dateKey = formatDateKey(d);
+        const blackout = isBookingBlackoutDate(dateKey) ? ' bookedout' : '';
         html += '<div class="grid-cell">' +
-          '<div class="slot available" data-date="' + dateKey + '" data-time="' + slot.key + '">' +
+          '<div class="slot available' + blackout + '" data-date="' + dateKey + '" data-time="' + slot.key + '">' +
           '<div class="slot-time">' + slot.label + '</div>' +
-          '<div class="slot-status">Available</div>' +
+          '<div class="slot-status">' + (isBookingBlackoutDate(dateKey) ? '<strong>Booked Out</strong>' : 'Available') + '</div>' +
           '</div></div>';
       });
       html += '</div>';
@@ -295,6 +324,13 @@
       const r = findBooking(date, time);
       const human = humanTimeLabel(time);
 
+      if (isBookingBlackoutDate(date)) {
+        cell.classList.remove('available');
+        cell.classList.add('reserved');
+        cell.innerHTML = '<div class="slot-time">' + human + '</div><div class="slot-status"><strong>Booked Out</strong></div>';
+        return;
+      }
+
       if (r) {
         cell.classList.remove('available');
         cell.classList.add('reserved');
@@ -353,6 +389,15 @@
   async function handleSlotClick() {
     const date = this.dataset.date;
     const time = this.dataset.time;
+
+    if (isBookingBlackoutDate(date)) {
+      await showModal(
+        'Booked Out',
+        'Appointments are paused for the next 2 weeks. Please check back after the blackout period.'
+      );
+      return;
+    }
+
     const existing = findBooking(date, time);
     const displayDate = formatDateFull(date);
 
