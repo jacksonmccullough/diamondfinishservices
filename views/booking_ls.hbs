@@ -124,7 +124,7 @@
       </div>
 
       <div id="schedule-wrapper">
-        <h3 class="schedule-title">Upcoming Schedule (Unavailable until Nov 16)</h3>
+        <h3 class="schedule-title">Upcoming Schedule</h3>
 
         <div class="schedule-container">
           <div id="schedule-grid" class="schedule-grid" role="table">
@@ -176,6 +176,7 @@
   const WINDOW_SIZE = 10; // next 10 weekdays displayed
 
   const TIME_SLOTS = [
+    { key: '15-16', label: '3:00 - 4:00 PM' },
     { key: '16-18', label: '4:00 - 6:00 PM' },
     { key: '18-20', label: '6:00 - 8:00 PM' },
     { key: '20-22', label: '8:00 - 10:00 PM' }
@@ -379,6 +380,7 @@
 
   function humanTimeLabel(time) {
     switch (time) {
+      case '15-16': return '3:00 - 4:00 PM';
       case '16-18': return '4:00 - 6:00 PM';
       case '18-20': return '6:00 - 8:00 PM';
       case '20-22': return '8:00 - 10:00 PM';

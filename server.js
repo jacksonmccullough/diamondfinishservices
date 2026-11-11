@@ -339,7 +339,7 @@ app.post('/api/bookings', bookingLimiter, async (req, res) => {
       return res.status(400).json({ error: 'Date is not within the available booking window' });
     }
     // Time whitelist validation
-    const VALID_TIMES = ['16-18', '18-20', '20-22'];
+    const VALID_TIMES = ['15-16', '16-18', '18-20', '20-22'];
     if (!VALID_TIMES.includes(time)) {
       return res.status(400).json({ error: 'Invalid time slot' });
     }
@@ -367,6 +367,7 @@ app.post('/api/bookings', bookingLimiter, async (req, res) => {
 
     // Send email confirmation via Nodemailer
     const timeLabels = {
+      '15-16': '3:00 - 4:00 PM',
       '16-18': '4:00 - 6:00 PM',
       '18-20': '6:00 - 8:00 PM',
       '20-22': '8:00 - 10:00 PM'
@@ -494,7 +495,7 @@ app.post('/api/bookings_ls', bookingLimiter, async (req, res) => {
     if (!getRollingWindowDates().has(date)) {
       return res.status(400).json({ error: 'Date is not within the available booking window' });
     }
-    const VALID_TIMES = ['16-18', '18-20', '20-22'];
+    const VALID_TIMES = ['15-16', '16-18', '18-20', '20-22'];
     if (!VALID_TIMES.includes(time)) {
       return res.status(400).json({ error: 'Invalid time slot' });
     }
@@ -516,7 +517,7 @@ app.post('/api/bookings_ls', bookingLimiter, async (req, res) => {
       service, date, time
     });
     await booking.save();
-    const timeLabels = { '16-18': '4:00 - 6:00 PM', '18-20': '6:00 - 8:00 PM', '20-22': '8:00 - 10:00 PM' };
+    const timeLabels = { '15-16': '3:00 - 4:00 PM', '16-18': '4:00 - 6:00 PM', '18-20': '6:00 - 8:00 PM', '20-22': '8:00 - 10:00 PM' };
     const humanTime = timeLabels[time] || time;
     const humanDate = formatBookingDate(date);
     try {
@@ -576,7 +577,7 @@ app.delete('/api/bookings_ls/cancel', bookingLimiter, async (req, res) => {
       return res.status(404).json({ error: 'No booking found with that order number' });
     }
 
-    const timeLabels = { '16-18': '4:00 - 6:00 PM', '18-20': '6:00 - 8:00 PM', '20-22': '8:00 - 10:00 PM' };
+    const timeLabels = { '15-16': '3:00 - 4:00 PM', '16-18': '4:00 - 6:00 PM', '18-20': '6:00 - 8:00 PM', '20-22': '8:00 - 10:00 PM' };
     const humanTime = timeLabels[result.time] || result.time;
     const humanDate = formatBookingDate(result.date);
 
@@ -636,7 +637,7 @@ app.delete('/api/bookings/cancel', bookingLimiter, async (req, res) => {
       return res.status(404).json({ error: 'No booking found with that order number' });
     }
 
-    const timeLabels = { '16-18': '4:00 - 6:00 PM', '18-20': '6:00 - 8:00 PM', '20-22': '8:00 - 10:00 PM' };
+    const timeLabels = { '15-16': '3:00 - 4:00 PM', '16-18': '4:00 - 6:00 PM', '18-20': '6:00 - 8:00 PM', '20-22': '8:00 - 10:00 PM' };
     const humanTime = timeLabels[result.time] || result.time;
     const humanDate = formatBookingDate(result.date);
 
